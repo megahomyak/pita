@@ -22,13 +22,12 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
 
   void _authenticate(BuildContext context) async {
     var url = "https://sgo.edu-74.ru";
-    var clientOptions = BaseOptions(
+    var client = Dio(BaseOptions(
         baseUrl: "$url/webapi/",
-        headers: {'user-agent': 'NetSchoolAPI/5.0.3', 'referer': url});
-    var client = Dio(clientOptions);
+        headers: {'user-agent': 'NetSchoolAPI/5.0.3', 'referer': url}));
     var authCookiesResponse = await client.get("logindata");
     var authCookies = authCookiesResponse.headers["set-cookie"]!;
-    clientOptions.headers.addAll({"cookie": authCookies[0]});
+    client.options.headers.addAll({"cookie": authCookies[0]});
     var preAuthData = (await client.post("auth/getdata")).data;
     var salt = preAuthData["salt"];
     preAuthData.remove("salt");
@@ -48,11 +47,11 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         "pw2": pw2,
       });
     } on DioError catch (e) {
+      print(e.response);
       print(e.response?.statusCode);
       rethrow;
     }
-    clientOptions.headers["at"] = authData.headers["at"];
-    print(client.options.headers["at"]);
+    client.options.headers["at"] = authData.headers["at"];
   }
 
   Future<Map<String, int>> _address(String schoolName, Dio client) async {
