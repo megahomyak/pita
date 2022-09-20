@@ -1,4 +1,11 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:windows1251/windows1251.dart';
+
+class SchoolNotFound implements Exception {}
 
 class AuthenticationScreen extends StatefulWidget {
   const AuthenticationScreen({super.key});
@@ -11,15 +18,58 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   bool rememberMe = false;
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+  final schoolNameController = TextEditingController();
 
-  void authenticate(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-              content: Text(
-                  usernameController.text + ", " + passwordController.text));
-        });
+  void _authenticate(BuildContext context) async {
+    var url = "https://sgo.edu-74.ru";
+    var clientOptions = BaseOptions(
+        baseUrl: "$url/webapi/",
+        headers: {'user-agent': 'NetSchoolAPI/5.0.3', 'referer': url});
+    var client = Dio(clientOptions);
+    var authCookiesResponse = await client.get("logindata");
+    var authCookies = authCookiesResponse.headers["set-cookie"]!;
+    clientOptions.headers.addAll({"cookie": authCookies[0]});
+    var preAuthData = (await client.post("auth/getdata")).data;
+    var salt = preAuthData["salt"];
+    preAuthData.remove("salt");
+    var password = passwordController.text;
+    var encodedPassword = utf8.encode(
+        md5.convert(const Windows1251Encoder().convert(password)).toString());
+    var pw2 = md5.convert(utf8.encode(salt) + encodedPassword).toString();
+    var pw = pw2.substring(0, password.length);
+    Response authData;
+    try {
+      authData = await client.post("login", queryParameters: {
+        ...(await _address(schoolNameController.text, client)),
+        ...preAuthData,
+        "loginType": 1,
+        "un": usernameController.text,
+        "pw": pw,
+        "pw2": pw2,
+      });
+    } on DioError catch (e) {
+      print(e.response?.statusCode);
+      rethrow;
+    }
+    clientOptions.headers["at"] = authData.headers["at"];
+    print(client.options.headers["at"]);
+  }
+
+  Future<Map<String, int>> _address(String schoolName, Dio client) async {
+    var resp = (await client.get("addresses/schools")).data;
+    for (final school in resp) {
+      if (school["name"] == schoolName) {
+        return {
+          "cid": school["countryId"],
+          "sid": school["stateId"],
+          "pid": school["municipalityDistrictId"],
+          "cn": school["cityId"],
+          "sft": 2,
+          "scid": school["id"],
+        };
+      }
+    }
+    throw SchoolNotFound();
   }
 
   @override
@@ -41,6 +91,14 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text("Authentication", style: TextStyle(fontSize: 30)),
+                const SizedBox(height: 10),
+                Container(
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    child: TextField(
+                        controller: schoolNameController,
+                        decoration: const InputDecoration(
+                            hintText: "School Name",
+                            border: OutlineInputBorder()))),
                 const SizedBox(height: 10),
                 Container(
                     constraints: const BoxConstraints(maxWidth: 200),
@@ -77,7 +135,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                     onPressed: () {
-                      authenticate(context);
+                      _authenticate(context);
                     },
                     child: const Padding(
                         padding: EdgeInsets.all(5),
