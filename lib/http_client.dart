@@ -1,0 +1,5 @@
+class HttpClient {
+    String? accessToken;
+
+
+}

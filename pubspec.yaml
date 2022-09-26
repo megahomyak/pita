@@ -32,9 +32,10 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^4.0.6
-  cupertino_icons: ^1.0.2
   windows1251: ^0.0.3
   crypto: ^3.0.2
+  shared_preferences: ^2.0.15
+  async: ^2.9.0
 
 dev_dependencies:
   flutter_test:
