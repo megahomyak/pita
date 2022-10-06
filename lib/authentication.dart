@@ -27,13 +27,17 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
     super.initState();
     () async {
       var prefs = await SharedPreferences.getInstance();
+      var schoolName = prefs.getString("school_name");
+      if (schoolName != null) {
+        setState(() {
+          _schoolNameController.text = schoolName;
+        });
+      }
       var password = prefs.getString("password");
       if (password != null) {
         var username = prefs.getString("username");
-        var schoolName = prefs.getString("school_name");
         setState(() {
           _usernameController.text = username!;
-          _schoolNameController.text = schoolName!;
           _passwordController.text = password;
           _rememberMe = true;
         });
@@ -101,11 +105,11 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
           rethrow;
         }
         client.options.headers["at"] = authData.headers["at"];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("school_name", schoolName);
         if (_rememberMe) {
-          final prefs = await SharedPreferences.getInstance();
           await prefs.setString("username", username);
           await prefs.setString("password", password);
-          await prefs.setString("school_name", schoolName);
         }
       } finally {
         if (!authCanceled) {
@@ -232,10 +236,8 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                                         await SharedPreferences.getInstance();
                                     await prefs.remove("username");
                                     await prefs.remove("password");
-                                    await prefs.remove("school_name");
                                     _passwordController.text = "";
                                     _usernameController.text = "";
-                                    _schoolNameController.text = "";
                                   }();
                                 }
                               });
