@@ -4,6 +4,7 @@ import 'package:async/async.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:pita/main_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:windows1251/windows1251.dart';
 
@@ -18,6 +19,7 @@ class AuthenticationScreen extends StatefulWidget {
 
 class _AuthenticationScreenState extends State<AuthenticationScreen> {
   bool _rememberMe = false;
+  final _websiteUrlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _schoolNameController = TextEditingController();
@@ -29,7 +31,9 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       var prefs = await SharedPreferences.getInstance();
       var schoolName = prefs.getString("school_name");
       if (schoolName != null) {
+        var websiteUrl = prefs.getString("website_url");
         setState(() {
+          _websiteUrlController.text = websiteUrl!;
           _schoolNameController.text = schoolName;
         });
       }
@@ -51,12 +55,14 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
     var password = _passwordController.text;
     var username = _usernameController.text;
     var schoolName = _schoolNameController.text;
+    var websiteName = _websiteUrlController.text;
     var authCanceled =
         false; // This is a workaround. I don't know why it is not canceling.
     var schoolNotSpecified = false;
     var auth = CancelableOperation.fromFuture(() async {
       try {
-        var url = "https://sgo.edu-74.ru";
+        print("BAR");
+        var url = _websiteUrlController.text;
         var client = Dio(BaseOptions(baseUrl: "$url/webapi/", headers: {
           'user-agent': 'NetSchoolAPI/5.0.3',
           'referer': url,
@@ -104,13 +110,21 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
           schoolNotSpecified = true;
           rethrow;
         }
+        print("BLAH");
         client.options.headers["at"] = authData.headers["at"];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("school_name", schoolName);
+        await prefs.setString("website_name", websiteName);
         if (_rememberMe) {
           await prefs.setString("username", username);
           await prefs.setString("password", password);
         }
+        print("FUG");
+        if (!mounted) return;
+        print("CHEECH");
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const MainScreen()));
+        print("CHWEERCH");
       } finally {
         if (!authCanceled) {
           Navigator.of(context).pop(true);
@@ -198,6 +212,14 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                 Container(
                     constraints: const BoxConstraints(maxWidth: 200),
                     child: TextField(
+                        controller: _websiteUrlController,
+                        decoration: const InputDecoration(
+                            labelText: "Website link",
+                            border: OutlineInputBorder()))),
+                const SizedBox(height: 10),
+                Container(
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    child: TextField(
                         controller: _schoolNameController,
                         decoration: const InputDecoration(
                             labelText: "School name",
@@ -248,7 +270,30 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                     onPressed: () {
-                      _authenticate(context);
+                    print("BEEP");
+                      try {
+                        _authenticate(context);
+                      } on DioError catch (error) {
+                        print("FOXY SAYS FUCK");
+                        if (error.type == DioErrorType.other) {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  actions: [
+                                    TextButton(
+                                      child: const Text("Got it"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    )
+                                  ],
+                                  content: const Text(
+                                      "The website URL you specified is invalid."),
+                                );
+                              });
+                        }
+                      }
                     },
                     child: const Padding(
                         padding: EdgeInsets.all(5),
