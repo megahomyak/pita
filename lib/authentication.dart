@@ -32,24 +32,20 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       if (schoolName != null) {
         _schoolNameController.text = schoolName;
         var websiteUrl = prefs.getString("website_url");
-        if (websiteUrl != null) {
-          _websiteUrlController.text = websiteUrl;
-        }
+        _websiteUrlController.text = websiteUrl!;
         setState(() {});
       }
       var password = prefs.getString("password");
       if (password != null) {
         _passwordController.text = password;
         var username = prefs.getString("username");
-        if (username != null) {
-          _usernameController.text = username;
-          _rememberMe = true;
-        }
+        _usernameController.text = username!;
+        _rememberMe = true;
         setState(() {});
         if (!mounted) return;
         await _authenticate(context);
       }
-    };
+    }();
     super.initState();
   }
 
@@ -58,38 +54,26 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
     var username = _usernameController.text;
     var schoolName = _schoolNameController.text;
     var websiteName = _websiteUrlController.text;
-    var authCanceled =
-        false; // This is a workaround. I don't know why it is not canceling.
+    var popDialog =
+        true; // This is a workaround. I don't know why the future is not canceling.
     var schoolNotSpecified = false;
     var auth = CancelableOperation.fromFuture(() async {
       try {
-        print("BAR");
         var url = _websiteUrlController.text;
         var client = Dio(BaseOptions(baseUrl: "$url/webapi/", headers: {
           'user-agent': 'NetSchoolAPI/5.0.3',
           'referer': url,
-          'accept': '*/*',
-          'accept-encoding': 'gzip, deflate',
-          'connection': 'keep-alive'
         }));
-        // не помню точно все что нужно апи, но без этого работает)
-        // client.options.headers.remove("charset");
-        // client.options.headers.remove("content-type");
-        //var loginData = await client.get("logindata");
-        // print(loginData.data);
-        // print(loginData.headers);
-        // var sessionIdRoundOne =
-        //     loginData.headers["Cookie"]![0].split(" ")[0]; // For `auth/getdata`
-        // print(sessionIdRoundOne.substring(0, sessionIdRoundOne.length - 1));
-        // client.options.headers["cookie"] =
-        //     sessionIdRoundOne.substring(0, sessionIdRoundOne.length - 1);
+        var loginData = await client.get("logindata");
+        var sessionIdRoundOne = loginData.headers["set-cookie"]![0]
+            .split(" ")[0]; // For `auth/getdata`
+        client.options.headers["cookie"] =
+            sessionIdRoundOne.substring(0, sessionIdRoundOne.length - 1);
         var preAuthDataResponse = await client.post("auth/getdata");
-        print(preAuthDataResponse.headers);
         var sessionIdRoundTwo = preAuthDataResponse.headers["set-cookie"]![0]
             .split(" ")[0]; // For `login`
-        //print(sessionIdRoundTwo.substring(0, sessionIdRoundTwo.length - 1));
-        // client.options.headers["cookie"] =
-        //     sessionIdRoundTwo.substring(0, sessionIdRoundTwo.length - 1);
+        client.options.headers["cookie"] =
+            sessionIdRoundTwo.substring(0, sessionIdRoundOne.length - 1);
         var preAuthData = preAuthDataResponse.data;
         var salt = preAuthData["salt"];
         preAuthData.remove("salt");
@@ -114,49 +98,33 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
             "Content-Type": "application/x-www-form-urlencoded"
           });
           authData = await client.post("login", data: params);
-          //возможно можно получше)
-          final List<String> setCookie = [];
-          authData.headers['set-cookie']?.forEach((cookie) {
-            final String cookieString = cookie.split(' ').first;
-            print(cookieString);
-            setCookie.add(cookieString.substring(0, cookieString.length - 1));
-          });
-          client.options.headers.addAll({
-            "Cookie": setCookie.join('; '),
-          });
         } on SchoolNotFound {
           schoolNotSpecified = true;
           rethrow;
         }
-        print("BLAH");
-        client.options.headers["at"] = authData.data["at"];
+        client.options.headers["at"] = authData.headers["at"];
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("school_name", schoolName);
-        await prefs.setString("website_name", websiteName);
+        await prefs.setString("website_url", websiteName);
         if (_rememberMe) {
           await prefs.setString("username", username);
           await prefs.setString("password", password);
         }
-        print("FUG");
         if (!mounted) return;
-        print("CHEECH");
-        //pop прогресс диалога
-        Navigator.pop(context);
-        //пушим мейн скрин с реплейсментом, чтобы обратно
-        //бэкбаттоном нельзя было вернуться
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => MainScreen(
-                      client: client,
-                    )));
-        print("CHWEERCH");
+        if (popDialog) {
+          popDialog = false;
+          Navigator.pop(context);
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => MainScreen(
+                        client: client,
+                      )));
+        }
       } finally {
-        // это и делало pop только что запушенного MainScreen,
-        // поэтому казалось что ничего не происходит
-        // if (!authCanceled) {
-        //   Navigator.of(context).pop(true);
-        // }
+        if (popDialog) {
+          Navigator.of(context).pop(true);
+        }
         if (schoolNotSpecified) {
           await showDialog(
               context: context,
@@ -196,7 +164,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       if (result == null) {
         // The user tapped out of the dialog.
         auth.cancel();
-        authCanceled = true;
+        popDialog = false;
       }
     });
   }
@@ -298,11 +266,9 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                     onPressed: () {
-                      print("BEEP");
                       try {
                         _authenticate(context);
                       } on DioError catch (error) {
-                        print("FOXY SAYS FUCK");
                         if (error.type == DioErrorType.other) {
                           showDialog(
                               context: context,
