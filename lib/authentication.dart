@@ -1,14 +1,9 @@
-import 'dart:convert';
-
 import 'package:async/async.dart';
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:pita/main_screen.dart';
+import 'package:pita/net_school_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:windows1251/windows1251.dart';
-
-class SchoolNotFound implements Exception {}
 
 class AuthenticationScreen extends StatefulWidget {
   const AuthenticationScreen({super.key});
@@ -53,59 +48,20 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
     var password = _passwordController.text;
     var username = _usernameController.text;
     var schoolName = _schoolNameController.text;
-    var websiteName = _websiteUrlController.text;
+    var websiteUrl = _websiteUrlController.text;
     var popDialog =
         true; // This is a workaround. I don't know why the future is not canceling.
-    var schoolNotSpecified = false;
     var auth = CancelableOperation.fromFuture(() async {
       try {
-        var url = _websiteUrlController.text;
-        var client = Dio(BaseOptions(baseUrl: "$url/webapi/", headers: {
-          'user-agent': 'NetSchoolAPI/5.0.3',
-          'referer': url,
-        }));
-        var loginData = await client.get("logindata");
-        var sessionIdRoundOne = loginData.headers["set-cookie"]![0]
-            .split(" ")[0]; // For `auth/getdata`
-        client.options.headers["cookie"] =
-            sessionIdRoundOne.substring(0, sessionIdRoundOne.length - 1);
-        var preAuthDataResponse = await client.post("auth/getdata");
-        var sessionIdRoundTwo = preAuthDataResponse.headers["set-cookie"]![0]
-            .split(" ")[0]; // For `login`
-        client.options.headers["cookie"] =
-            sessionIdRoundTwo.substring(0, sessionIdRoundOne.length - 1);
-        var preAuthData = preAuthDataResponse.data;
-        var salt = preAuthData["salt"];
-        preAuthData.remove("salt");
-        var encodedPassword = utf8.encode(md5
-            .convert(const Windows1251Encoder().convert(password))
-            .toString());
-        var pw2 = md5.convert(utf8.encode(salt) + encodedPassword).toString();
-        var pw = pw2.substring(0, password.length);
-        Response authData;
-        try {
-          final params = <String, dynamic>{
-            ...(await _address(schoolName, client)),
-            ...preAuthData,
-            "loginType": 1,
-            "un": username,
-            "pw": pw,
-            "pw2": pw2,
-          };
-          client.options.headers.addAll({
-            "Cookie":
-                sessionIdRoundTwo.substring(0, sessionIdRoundTwo.length - 1),
-            "Content-Type": "application/x-www-form-urlencoded"
-          });
-          authData = await client.post("login", data: params);
-        } on SchoolNotFound {
-          schoolNotSpecified = true;
-          rethrow;
-        }
-        client.options.headers["at"] = authData.headers["at"];
+        var client = NetSchoolClient(LogInParams(
+            url: websiteUrl,
+            username: username,
+            password: password,
+            schoolName: schoolName));
+        client.logIn();
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("school_name", schoolName);
-        await prefs.setString("website_url", websiteName);
+        await prefs.setString("website_url", websiteUrl);
         if (_rememberMe) {
           await prefs.setString("username", username);
           await prefs.setString("password", password);
@@ -113,7 +69,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         if (!mounted) return;
         if (popDialog) {
           popDialog = false;
-          Navigator.pop(context);
+          Navigator.of(context).pop(true);
           Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -121,28 +77,26 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
                         client: client,
                       )));
         }
-      } finally {
+      } on SchoolNotFound {
         if (popDialog) {
           Navigator.of(context).pop(true);
         }
-        if (schoolNotSpecified) {
-          await showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  actions: [
-                    TextButton(
-                      child: const Text("Got it"),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    )
-                  ],
-                  content:
-                      const Text("The school you specified cannot be found."),
-                );
-              });
-        }
+        await showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                actions: [
+                  TextButton(
+                    child: const Text("Got it"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  )
+                ],
+                content:
+                    const Text("The school you specified cannot be found."),
+              );
+            });
       }
     }());
     showDialog(
@@ -167,23 +121,6 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         popDialog = false;
       }
     });
-  }
-
-  Future<Map<String, int>> _address(String schoolName, Dio client) async {
-    var resp = (await client.get("addresses/schools")).data;
-    for (final school in resp) {
-      if (school["name"] == schoolName) {
-        return {
-          "cid": school["countryId"],
-          "sid": school["stateId"],
-          "pid": school["municipalityDistrictId"],
-          "cn": school["cityId"],
-          "sft": 2,
-          "scid": school["id"],
-        };
-      }
-    }
-    throw SchoolNotFound();
   }
 
   @override
