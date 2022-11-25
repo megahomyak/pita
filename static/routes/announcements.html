@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>pita: объявления</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link type="text/css" rel="stylesheet" href="/static/css/materialize.min.css" media="screen,projection" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style type="text/css">
+            header, main, footer {
+                padding-left: 300px;
+            }
+
+            @media only screen and (max-width : 992px) {
+                header, main, footer {
+                    padding-left: 0;
+                }
+            }
+
+            .tabs .tab a {
+                 color: teal;
+            }
+            .tabs .tab a.active {
+                 color: teal;
+            }
+            .tabs .tab a:hover {
+                 color: teal;
+            }
+            .tabs .tab a:focus {
+                 background-color: transparent;
+            }
+            .tabs .tab a:focus.active {
+                 background-color: transparent;
+            }
+            .tabs .indicator {
+                 background-color: teal;
+            }
+
+            .collection-item {
+                display: flex;
+                align-contents: center;
+            }
+
+            .collection-item i { margin-right: 5px }
+
+            .announcement { margin-left: 10px; margin-right: 10px }
+            .announcement :first-child { margin-top: 0px }
+
+            .author-section { width: 100%; display: flex; align-items: center; justify-content: end; margin-top: 10px }
+            .author-section i { margin: 0px; display: flex; align-items: center }
+            .author-section img { height: 40px; width: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px }
+
+            .nav-wrapper { display: flex; justify-content: center }
+
+            .tab a { display: flex !important; justify-content: center; align-items: center }
+
+            .tab i { margin-right: 5px }
+
+            body { word-break: break-all }
+
+            .attachments { border: 5px solid teal; border-radius: 10px; padding: 10px }
+            .attachments ul { margin-bottom: 0px }
+        </style>
+        <script type="text/javascript" src="static/js/materialize.min.js" defer></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var elems = document.querySelectorAll('.sidenav');
+                var instances = M.Sidenav.init(elems);
+                var elem = document.querySelector('.tabs');
+                var instance = M.Tabs.init(elem);
+            });
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="nav-wrapper white">
+                    <span class="black-text" style="font-size: 2.1rem">pita: объявления</span>
+                </div>
+            </nav>
+            <nav style="position: fixed; bottom: 0px; height: 48px" class="hide-on-large-only white">
+                <ul class="tabs tabs-fixed-width">
+                    <li class="tab"><a href="/announcements" target="_self">
+                        <i class="material-icons">campaign</i>
+                        <span>Объявления</span>
+                    </a></li>
+                    <li class="tab"><a href="/diary" target="_self">
+                        <i class="material-icons">format_list_numbered</i>
+                        <span>Дневник</span>
+                    </a></li>
+                </ul>
+            </nav>
+            <div class="collection sidenav sidenav-fixed invisible-top hide-on-med-and-down">
+                <a href="/announcements">
+                    <div class="collection-item active valign-wrapper white-text">
+                        <i class="material-icons">campaign</i>
+                        <span>Объявления</span>
+                    </div>
+                </a>
+                <a href="/diary">
+                    <div class="collection-item valign-wrapper black-text">
+                        <i class="material-icons">format_list_numbered</i>
+                        <span>Дневник</span>
+                    </div>
+                </a>
+            </div>
+        </header>
+        <main>
+            {% for announcement in announcements %}
+                <div class="card-panel announcement">
+                    <div class="contents">
+                        <h4>{{announcement.name|e}}</h4>
+                        {{announcement.content|unescape}}
+                    </div>
+                        {% if announcement.attachments %}
+                        <div class="attachments">
+                            <p>Вложения</p>
+                            <ul>
+                            {% for attachment in announcement.attachments %}
+                                <li><a href="/attachments/{{attachment.id}}/{{attachment.name}}">{{attachment.name}}</a></li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    <div class="author-section">
+                        <i><img alt="Фотография пользователя &quot;{{announcement.author.nickname|e}}&quot;" src="/profile_picture/{{announcement.author.id}}" /></i>
+                        <span>{{announcement.author.nickname|e}}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </main>
+    </body>
+</html>

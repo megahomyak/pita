@@ -3,15 +3,8 @@
     <head>
         <title>pita: вход в систему</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
         <link type="text/css" rel="stylesheet" href="/static/css/materialize.min.css" media="screen,projection" />
-        <link type="text/css" rel="stylesheet" href="/static/css/animate.min.css" media="screen,projection" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style type="text/css">
-            .hidden {
-                visibility: hidden;
-            }
-        </style>
         <script type="text/javascript" src="static/js/materialize.min.js" defer></script>
         <script type="text/javascript" defer>
             document.addEventListener('DOMContentLoaded', function() {
@@ -67,7 +60,7 @@
                     elem[0].classList.remove("invalid");
                     elem[1].classList.add("hide");
                 }
-                let resp = await fetch("/", {method: "POST", headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: JSON.stringify({username: username[0].value, sgo_url: sgoUrl[0].value, password: password[0].value, school_name: schoolName[0].value})});
+                let resp = await fetch("/", {method: "POST", headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: username[0].value, sgo_url: sgoUrl[0].value, password: password[0].value, school_name: schoolName[0].value})});
                 authButton.classList.remove("hide");
                 authLoader.classList.add("hide");
                 for (elem of textFields) {
@@ -75,7 +68,7 @@
                     elem[0].disabled = false;
                 }
                 if (resp.status == 200) {
-                    window.location.replace("/main");
+                    window.location.replace("/announcements");
                 } else {
                     let error = await resp.json();
                     switch (error.error_type) {
