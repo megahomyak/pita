@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 import routes.auth
 import routes.announcements
+import routes.diary
 
 app = FastAPI()
 
@@ -18,3 +19,4 @@ async def favicon():
 
 app.include_router(routes.auth.router)
 app.include_router(routes.announcements.router)
+app.include_router(routes.diary.router)

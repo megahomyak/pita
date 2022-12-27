@@ -56,10 +56,13 @@
 
             .tab i { margin-right: 5px }
 
-            body { word-break: break-all }
+            body { word-break: normal; hyphens: auto }
 
             .attachments { border: 5px solid teal; border-radius: 10px; padding: 10px }
             .attachments ul { margin-bottom: 0px }
+
+            .announcement-heading { display: flex; justify-content: space-between; align-items: top }
+            .announcement-heading span { margin-left: 1em }
         </style>
         <script type="text/javascript" src="static/js/materialize.min.js" defer></script>
         <script>
@@ -71,7 +74,7 @@
             });
         </script>
     </head>
-    <body>
+    <body lang="ru">
         <header>
             <nav>
                 <div class="nav-wrapper white">
@@ -109,7 +112,10 @@
             {% for announcement in announcements %}
                 <div class="card-panel announcement">
                     <div class="contents">
-                        <h4>{{announcement.name|e}}</h4>
+                        <div class="announcement-heading">
+                            <h4>{{announcement.name|e}}</h4>
+                            <span>{{announcement.post_date|format_datetime}}</span>
+                        </div>
                         {{announcement.content|unescape}}
                     </div>
                         {% if announcement.attachments %}

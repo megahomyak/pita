@@ -17,6 +17,7 @@ class Credentials(BaseModel):
 
 TEMPLATE_LOADER = jinja2.Environment(loader=jinja2.FileSystemLoader(searchpath="./static/routes/"))
 TEMPLATE_LOADER.filters["unescape"] = html.unescape
+TEMPLATE_LOADER.filters["format_datetime"] = lambda dt: dt.strftime("%Y.%M.%d %H:%m")
 
 
 _CREDENTIALS_DIRECTORY = "data"
