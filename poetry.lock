@@ -166,21 +166,46 @@ lint = ["mypy (==0.990)", "flake8 (==5.0.4)", "flake8-bugbear (==22.10.25)", "pr
 tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
+name = "marshmallow-dataclass"
+version = "8.5.11"
+description = "Python library to convert dataclasses into marshmallow schemas."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+marshmallow = ">=3.13.0,<4.0"
+typing-inspect = ">=0.8.0"
+
+[package.extras]
+dev = ["typeguard", "pre-commit (>=2.17,<3.0)", "sphinx", "pytest (>=5.4)", "pytest-mypy-plugins (>=1.2.0)", "marshmallow-enum", "typing-extensions (>=3.7.2)", "marshmallow (>=3.18.0,<4.0)"]
+docs = ["sphinx"]
+enum = ["marshmallow-enum", "marshmallow (>=3.18.0,<4.0)"]
+lint = ["pre-commit (>=2.17,<3.0)"]
+tests = ["pytest (>=5.4)", "pytest-mypy-plugins (>=1.2.0)", "typing-extensions (>=3.7.2)"]
+union = ["typeguard"]
+
+[[package]]
+name = "mypy-extensions"
+version = "0.4.3"
+description = "Experimental type system extensions for programs checked with the mypy typechecker."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "netschoolapi"
-version = "8.0.0"
+version = "11.0.2"
 description = "Асинхронный API-клиент для «Сетевого города»"
 category = "main"
 optional = false
-python-versions = ">=3.8"
-develop = true
+python-versions = ">=3.7"
 
 [package.dependencies]
 httpx = "*"
 marshmallow = "*"
-
-[package.source]
-type = "directory"
-url = "../netschoolapi"
+marshmallow-dataclass = "*"
+typing-extensions = "*"
 
 [[package]]
 name = "packaging"
@@ -297,6 +322,18 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "typing-inspect"
+version = "0.8.0"
+description = "Runtime inspection utilities for typing module."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+mypy-extensions = ">=0.3.0"
+typing-extensions = ">=3.7.4"
+
+[[package]]
 name = "uvicorn"
 version = "0.19.0"
 description = "The lightning-fast ASGI server."
@@ -324,8 +361,8 @@ anyio = ">=3.0.0"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "3.8.*"
-content-hash = "010698240a19049840c0a0400ecd73e4cc5a7fcd4b3fe6e6515a82e7850c2be8"
+python-versions = ">=3.8"
+content-hash = "4eeb050683e5e190e83d872687c57664d0d0c862c97a1745207ebdf79b4139de"
 
 [metadata.files]
 anyio = [
@@ -476,7 +513,17 @@ marshmallow = [
     {file = "marshmallow-3.19.0-py3-none-any.whl", hash = "sha256:93f0958568da045b0021ec6aeb7ac37c81bfcccbb9a0e7ed8559885070b3a19b"},
     {file = "marshmallow-3.19.0.tar.gz", hash = "sha256:90032c0fd650ce94b6ec6dc8dfeb0e3ff50c144586462c389b81a07205bedb78"},
 ]
-netschoolapi = []
+marshmallow-dataclass = [
+    {file = "marshmallow_dataclass-8.5.11-py3-none-any.whl", hash = "sha256:d9dbce8d356a8dad2b80fecf15cac97f42a48397eefa594693874a2a6539ea84"},
+    {file = "marshmallow_dataclass-8.5.11.tar.gz", hash = "sha256:b7b0ee28fa9e88edd00db324762848d3182fe5dba82c3b897cb525c402ffd143"},
+]
+mypy-extensions = [
+    {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
+    {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+]
+netschoolapi = [
+    {file = "netschoolapi-11.0.2-py3-none-any.whl", hash = "sha256:e386e59125e9c35a1b3fe03c16ac1574789f3f294483f96403b9ef296141f6e9"},
+]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
     {file = "packaging-21.3.tar.gz", hash = "sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb"},
@@ -581,6 +628,10 @@ starlette = [
 typing-extensions = [
     {file = "typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},
     {file = "typing_extensions-4.4.0.tar.gz", hash = "sha256:1511434bb92bf8dd198c12b1cc812e800d4181cfcb867674e0f8279cc93087aa"},
+]
+typing-inspect = [
+    {file = "typing_inspect-0.8.0-py3-none-any.whl", hash = "sha256:5fbf9c1e65d4fa01e701fe12a5bca6c6e08a4ffd5bc60bfac028253a447c5188"},
+    {file = "typing_inspect-0.8.0.tar.gz", hash = "sha256:8b1ff0c400943b6145df8119c41c244ca8207f1f10c9c057aeed1560e4806e3d"},
 ]
 uvicorn = [
     {file = "uvicorn-0.19.0-py3-none-any.whl", hash = "sha256:cc277f7e73435748e69e075a721841f7c4a95dba06d12a72fe9874acced16f6f"},
